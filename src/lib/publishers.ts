@@ -9,7 +9,13 @@ import { publishers } from '../../db/schema';
 import type { Publisher } from '../types/game';
 import type { Database } from './db';
 
-/** All publishers ordered by name. */
+/**
+ * Retrieves all publishers ordered alphabetically by name.
+ *
+ * @param db - The injectable Drizzle database instance to query.
+ * @returns A promise resolving to publisher summaries containing each
+ * publisher's id and name.
+ */
 export async function getAllPublishers(db: Database): Promise<Publisher[]> {
     return db
         .select({ id: publishers.id, name: publishers.name })
