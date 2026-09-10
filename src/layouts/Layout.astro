@@ -17,6 +17,15 @@ const { title = "Tailspin Toys" } = Astro.props;
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <meta name="generator" content={Astro.generator} />
         <title>{title}</title>
+        <script is:inline>
+            try {
+                if (localStorage.getItem('tailspin-high-contrast') === 'true') {
+                    document.documentElement.dataset.highContrast = 'true';
+                }
+            } catch {
+                // Storage can be unavailable in privacy-restricted browsing contexts.
+            }
+        </script>
         <!-- Preconnect to improve font loading -->
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -40,6 +49,48 @@ const { title = "Tailspin Toys" } = Astro.props;
     html {
         font-family: var(--font-sans);
         scroll-behavior: smooth;
+    }
+
+    html[data-high-contrast='true'] body {
+        background-color: #000 !important;
+        color: #fff !important;
+    }
+
+    html[data-high-contrast='true'] header,
+    html[data-high-contrast='true'] nav,
+    html[data-high-contrast='true'] main,
+    html[data-high-contrast='true'] header *,
+    html[data-high-contrast='true'] nav *,
+    html[data-high-contrast='true'] main *,
+    html[data-high-contrast='true'] [data-testid='game-card'],
+    html[data-high-contrast='true'] [data-testid='about-section'],
+    html[data-high-contrast='true'] [data-testid='game-details'] {
+        border-color: #fff !important;
+        background: #000 !important;
+        color: #fff !important;
+        box-shadow: none !important;
+        text-shadow: none !important;
+    }
+
+    html[data-high-contrast='true'] header,
+    html[data-high-contrast='true'] nav,
+    html[data-high-contrast='true'] main,
+    html[data-high-contrast='true'] [data-testid='game-card'],
+    html[data-high-contrast='true'] [data-testid='about-section'],
+    html[data-high-contrast='true'] [data-testid='game-details'],
+    html[data-high-contrast='true'] [data-testid='game-card'] > div,
+    html[data-high-contrast='true'] [data-testid='game-card'] > div > div {
+        background: #000 !important;
+        color: #fff !important;
+    }
+
+    html[data-high-contrast='true'] a {
+        color: #ffff00 !important;
+    }
+
+    html[data-high-contrast='true'] button {
+        background: #000 !important;
+        color: #fff !important;
     }
     
     body {

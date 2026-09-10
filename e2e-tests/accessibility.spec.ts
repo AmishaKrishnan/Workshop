@@ -220,4 +220,20 @@ test.describe('Accessibility Tests', () => {
       await expect(gameCardSvgs.nth(i)).toHaveAttribute('aria-hidden', 'true');
     }
   });
+
+  test('high contrast mode persists across page reloads', async ({ page }) => {
+    await page.goto('/');
+
+    const contrastToggle = page.getByRole('button', { name: 'High contrast' });
+    await expect(contrastToggle).toHaveAttribute('aria-pressed', 'false');
+
+    await contrastToggle.click();
+    await expect(contrastToggle).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('html')).toHaveAttribute('data-high-contrast', 'true');
+
+    await page.reload();
+
+    await expect(page.getByRole('button', { name: 'High contrast' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('html')).toHaveAttribute('data-high-contrast', 'true');
+  });
 });
