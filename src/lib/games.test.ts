@@ -6,6 +6,7 @@ import {
     getAllGames,
     getAllGameIds,
     getGameById,
+    getGames,
 } from './games';
 
 async function seedGames(db: Database, count: number): Promise<void> {
@@ -28,6 +29,55 @@ async function seedGames(db: Database, count: number): Promise<void> {
             publisherId: publisher.id,
         });
     }
+}
+
+async function seedFilterFixtures(db: Database): Promise<void> {
+    const insertedCategories = await db
+        .insert(categories)
+        .values([
+            { name: 'Strategy', description: 'strategy games' },
+            { name: 'Puzzle', description: 'puzzle games' },
+        ])
+        .returning({ id: categories.id, name: categories.name });
+    const insertedPublishers = await db
+        .insert(publishers)
+        .values([
+            { name: 'Alpha Games', description: 'alpha' },
+            { name: 'Beta Games', description: 'beta' },
+        ])
+        .returning({ id: publishers.id, name: publishers.name });
+    const strategy = insertedCategories.find((category) => category.name === 'Strategy');
+    const puzzle = insertedCategories.find((category) => category.name === 'Puzzle');
+    const alpha = insertedPublishers.find((publisher) => publisher.name === 'Alpha Games');
+    const beta = insertedPublishers.find((publisher) => publisher.name === 'Beta Games');
+
+    if (!strategy || !puzzle || !alpha || !beta) {
+        throw new Error('Failed to create filtering fixtures');
+    }
+
+    await db.insert(games).values([
+        {
+            title: 'Alpha Strategy',
+            description: 'Alpha strategy',
+            starRating: 4,
+            categoryId: strategy.id,
+            publisherId: alpha.id,
+        },
+        {
+            title: 'Beta Strategy',
+            description: 'Beta strategy',
+            starRating: 4,
+            categoryId: strategy.id,
+            publisherId: beta.id,
+        },
+        {
+            title: 'Alpha Puzzle',
+            description: 'Alpha puzzle',
+            starRating: 4,
+            categoryId: puzzle.id,
+            publisherId: alpha.id,
+        },
+    ]);
 }
 
 describe('games data-access helpers', () => {
@@ -62,5 +112,31 @@ describe('games data-access helpers', () => {
     it('returns null for a non-existent game', async () => {
         await seedGames(db, 2);
         expect(await getGameById(db, 99999)).toBeNull();
+    });
+
+    it('filters games by one category', async () => {
+        await seedFilterFixtures(db);
+        const strategy = await getGames(db, { categoryIds: [1] });
+
+        expect(strategy.map((game) => game.title)).toEqual(['Alpha Strategy', 'Beta Strategy']);
+    });
+
+    it('filters games by multiple categories and one publisher', async () => {
+        await seedFilterFixtures(db);
+        const filtered = await getGames(db, { categoryIds: [1, 2], publisherId: 1 });
+
+        expect(filtered.map((game) => game.title)).toEqual(['Alpha Puzzle', 'Alpha Strategy']);
+    });
+
+    it('returns no games when filters do not match', async () => {
+        await seedFilterFixtures(db);
+
+        expect(await getGames(db, { categoryIds: [99999] })).toEqual([]);
+    });
+
+    it('treats an empty category selection as no category filter', async () => {
+        await seedFilterFixtures(db);
+
+        expect(await getGames(db, { categoryIds: [] })).toHaveLength(3);
     });
 });

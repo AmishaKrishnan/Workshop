@@ -24,6 +24,59 @@ test.describe('Game Listing and Navigation', () => {
     });
   });
 
+  test('should filter games by category and publisher together', async ({ page }) => {
+    await page.goto('/');
+
+    const categoryFilter = page.getByTestId('category-filter');
+    const publisherFilter = page.getByTestId('publisher-filter');
+    const visibleCards = page.locator('[data-game-card-wrapper]:not(.hidden)');
+
+    await test.step('Verify accessible filter controls', async () => {
+      await expect(categoryFilter).toHaveAccessibleName('Categories');
+      await expect(publisherFilter).toHaveAccessibleName('Publisher');
+      await expect(page.getByTestId('clear-filters')).toBeVisible();
+    });
+
+    await test.step('Apply a category and publisher filter', async () => {
+      await categoryFilter.selectOption({ label: 'Strategy' });
+      await publisherFilter.selectOption({ label: 'CodeForge Studios' });
+    });
+
+    await test.step('Verify the combined filtered result and URL', async () => {
+      await expect(visibleCards).toHaveCount(1);
+      await expect(visibleCards.first()).toContainText('DevOps Dominion');
+      await expect(page).toHaveURL(/categories=1/);
+      await expect(page).toHaveURL(/publisher=1/);
+      await expect(page.getByTestId('games-count')).toHaveText('Showing 1 games');
+    });
+  });
+
+  test('should support multiple categories and clearing filters', async ({ page }) => {
+    await page.goto('/');
+    const categoryFilter = page.getByTestId('category-filter');
+    const visibleCards = page.locator('[data-game-card-wrapper]:not(.hidden)');
+
+    await categoryFilter.selectOption([
+      { label: 'Strategy' },
+      { label: 'Puzzle' },
+    ]);
+
+    await expect(visibleCards).toHaveCount(8);
+    await expect(page).toHaveURL(/categories=1%2C2|categories=1,2/);
+
+    await page.getByTestId('clear-filters').click();
+    await expect(visibleCards).toHaveCount(21);
+    await expect(page).toHaveURL('/');
+  });
+
+  test('should show an empty state when filters have no matches', async ({ page }) => {
+    await page.goto('/?categories=99999');
+
+    await expect(page.locator('[data-game-card-wrapper]:not(.hidden)')).toHaveCount(0);
+    await expect(page.getByTestId('filtered-empty-state')).toBeVisible();
+    await expect(page.getByTestId('games-count')).toHaveText('Showing 0 games');
+  });
+
   test('should navigate to correct game details page when clicking on a game', async ({ page }) => {
     let gameId: string | null;
     let gameTitle: string | null;
